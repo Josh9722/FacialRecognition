@@ -13,24 +13,18 @@ class DetectFace {
             allCascades[i] = new CascadeClassifier(cascadePaths[i]);
         }
 
-        // Detect faces
-        Mat haarResult = FindFace(allCascades);
-        Cv2.ImShow("Faces by Haar", haarResult);
-        Cv2.WaitKey(0);
-        Cv2.DestroyAllWindows();
     }
 
-    private Rect[] GetFaces(params CascadeClassifier[] ListOfCascades)
+    private Rect[] GetFaces(Mat src, params CascadeClassifier[] ListOfCascades)
     {
         List<Rect> faces = new List<Rect>();
         CascadeClassifier[] cascades = ListOfCascades;
-        using Mat src = new Mat(DataPath.PeopleGrid, ImreadModes.Color);
         using Mat gray = new Mat();
 
 
         foreach (CascadeClassifier cascade in cascades)
         {
-            Rect[] detectedFaces = cascade.DetectMultiScale(new Mat(DataPath.PeopleGrid, ImreadModes.Color), 1.08, 2, HaarDetectionTypes.ScaleImage);
+            Rect[] detectedFaces = cascade.DetectMultiScale(src, 1.08, 2, HaarDetectionTypes.ScaleImage);
 
             foreach (Rect detectedFace in detectedFaces) {
                 if (!faces.Any(face => face.IntersectsWith(detectedFace) || face.Contains(detectedFace))) { 
@@ -38,16 +32,15 @@ class DetectFace {
                 }
             }
         }
-        Console.WriteLine(faces.Count);
+        //Console.WriteLine(faces.Count);
 
         return faces.ToArray();
     }
 
 
-    private void SaveFacesInNewImages(params CascadeClassifier[] cascade) { 
-        Rect[] faces = GetFaces(cascade);
+    private void SaveFacesInNewImages(Mat src, params CascadeClassifier[] cascade) { 
+        Rect[] faces = GetFaces(src, cascade);
         Console.WriteLine(faces.Length); // DEBUG
-        using var src = new Mat(DataPath.PeopleGrid, ImreadModes.Color);
         string path = DataPath.ImagesOutput;
         
         int index = 0;
@@ -60,35 +53,38 @@ class DetectFace {
     }
 
 
-    private Mat FindFace(params CascadeClassifier[] cascade)
+    public Mat FindFace(Mat src, params CascadeClassifier[] cascade)
     {
-        Mat result;
-
-        using (var src = new Mat(DataPath.PeopleGrid, ImreadModes.Color))
-        using (var gray = new Mat())
+        if (src == null || src.Empty())
         {
-            result = src.Clone();
-            Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
-
-            // Detect faces
-            Rect[] faces = GetFaces(cascade);
-
-            // Render all detected faces
-            foreach (Rect face in faces)
-            {
-                var center = new Point
-                {
-                    X = (int)(face.X + face.Width * 0.5),
-                    Y = (int)(face.Y + face.Height * 0.5)
-                };
-                var axes = new Size
-                {
-                    Width = (int)(face.Width * 0.5),
-                    Height = (int)(face.Height * 0.5)
-                };
-                Cv2.Ellipse(result, center, axes, 0, 0, 360, new Scalar(255, 0, 255), 4);
-            }
+            Console.WriteLine("Error: Image is empty");
+            return src; 
         }
+
+        Mat result = src.Clone();
+        Mat gray = new Mat();
+
+        Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
+
+        // Detect faces
+        Rect[] faces = GetFaces(src, cascade);
+
+        // Render all detected faces
+        foreach (Rect face in faces)
+        {
+            var center = new Point
+            {
+                X = (int)(face.X + face.Width * 0.5),
+                Y = (int)(face.Y + face.Height * 0.5)
+            };
+            var axes = new Size
+            {
+                Width = (int)(face.Width * 0.5),
+                Height = (int)(face.Height * 0.5)
+            };
+            Cv2.Ellipse(result, center, axes, 0, 0, 360, new Scalar(255, 0, 255), 4);
+        }
+
         return result;
     }
 }

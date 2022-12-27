@@ -17,8 +17,9 @@ namespace FacialRecognition
     {
         public static void Main(string[] args)
         {
-            DetectFace face = new DetectFace();
-            face.RunTest();  
+            // DetectFace face = new DetectFace();
+            // face.RunTest();  
+            new CameraFeed(); 
             
         }
         
