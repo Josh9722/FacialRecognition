@@ -24,6 +24,7 @@ class CameraFeed
         frame = new Mat();
         capture = new VideoCapture(0);
         Console.WriteLine("Using: " + capture.GetBackendName());
+        processedFrame = frame.Clone(); 
 
         // Start duration countdown thread
         Thread CountDown = new Thread(durationCountdown); 
