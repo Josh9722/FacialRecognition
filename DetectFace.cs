@@ -30,7 +30,6 @@ class DetectFace {
 
             foreach (Rect detectedFace in detectedFaces) {
                 if (levelWeights[Array.IndexOf(detectedFaces, detectedFace)] < confidenceThreshold) {
-                    Console.WriteLine(levelWeights[Array.IndexOf(detectedFaces, detectedFace)]); // DEBUG
                     continue;
                 }
 
@@ -39,7 +38,6 @@ class DetectFace {
                 }
             }
         }
-        //Console.WriteLine(faces.Count);
 
         return faces.ToArray();
     }

@@ -81,7 +81,7 @@ class CameraFeed
         // Detect faces
         while (reading) {
             processedFrame = new DetectFace().FindFace(frame, allCascades);
-            if (processedFrame != null && !processedFrame.Empty()) {
+            if (processedFrame != null || !processedFrame.Empty()) {
                 frameReady = true;
             } else { 
                 frameReady = false;
