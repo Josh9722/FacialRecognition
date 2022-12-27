@@ -62,7 +62,6 @@ class DetectFace {
     {
         if (src == null || src.Empty())
         {
-            Console.WriteLine("Error: Image is empty");
             return src; 
         }
 
