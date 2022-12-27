@@ -73,6 +73,9 @@ class DetectFace {
 
         // Detect faces
         Rect[] faces = GetFaces(src, cascade);
+        if (faces.Length == 0) {
+            return null;
+        }
 
         // Render all detected faces
         foreach (Rect face in faces)
