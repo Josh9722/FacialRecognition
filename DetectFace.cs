@@ -2,7 +2,6 @@ using OpenCvSharp;
 
 
 class DetectFace {
-    int confidenceThreshold = 80;
 
     public void RunTest()
     {
@@ -29,8 +28,10 @@ class DetectFace {
             Rect[] detectedFaces =  cascade.DetectMultiScale(src, out rejectLevels, out levelWeights, 1.08, 2, HaarDetectionTypes.ScaleImage, outputRejectLevels: true);
 
             foreach (Rect detectedFace in detectedFaces) {
-                if (levelWeights[Array.IndexOf(detectedFaces, detectedFace)] < confidenceThreshold) {
-                    continue;
+                double l = levelWeights[Array.IndexOf(detectedFaces, detectedFace)]; 
+                float r = rejectLevels[Array.IndexOf(detectedFaces, detectedFace)];
+                if (l <= 5) { 
+                    continue; 
                 }
 
                 if (!faces.Any(face => face.IntersectsWith(detectedFace) || face.Contains(detectedFace))) { 
