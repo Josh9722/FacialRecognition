@@ -102,7 +102,7 @@ class CameraFeed
             frameReady = false;
             Cv2.ImShow("Camera", processedFrame);
             FreezeDuration = 1000;
-            WaitDuration = 4000;
+            WaitDuration = 2000;
         } else { 
             Cv2.ImShow("Camera", frame);
         }
