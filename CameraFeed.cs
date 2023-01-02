@@ -12,6 +12,7 @@ class CameraFeed
     private Thread faceDetection;
     private Mat processedFrame;
     private bool frameReady = false; // Used to check if frame is ready to be processed
+    private DetectFace detectFace = new DetectFace(); 
     
     private int FreezeDuration; // How long to freeze frame on the identified face
     private int WaitDuration; // How long to wait before attempting to detect a face again 
@@ -81,7 +82,8 @@ class CameraFeed
 
         // Detect faces
         while (reading) {
-            processedFrame = new DetectFace().FindFace(frame, allCascades);
+            processedFrame = detectFace.FindFace(frame, allCascades);
+            //detectFace.SaveFacesInNewImages(frame, allCascades);
             if (processedFrame != null) {
                 frameReady = true;
             } else { 
