@@ -2,6 +2,7 @@ using OpenCvSharp;
 
 
 class DetectFace {
+    private int imgnum = 0; 
 
     public void RunTest()
     {
@@ -17,8 +18,22 @@ class DetectFace {
     // Returns a list of faces in an image
     public Rect[] GetFaces(Mat src, params CascadeClassifier[] ListOfCascades)
     {
+        CascadeClassifier[] cascades; 
+        if (ListOfCascades.Length == 0) {
+            // Use all cascades
+            string[] cascadePaths = DataPath.AllCascades();
+            CascadeClassifier[] allCascades = new CascadeClassifier[cascadePaths.Length];
+            for (int i = 0; i < cascadePaths.Length; i++)
+            {
+                allCascades[i] = new CascadeClassifier(cascadePaths[i]);
+            }
+            cascades = allCascades;
+        } else {
+            cascades = ListOfCascades;
+        }
         List<Rect> faces = new List<Rect>();
-        CascadeClassifier[] cascades = ListOfCascades;
+        
+        
         using Mat gray = new Mat();
 
         // Using multiple cascades to increase accuracy
@@ -47,17 +62,24 @@ class DetectFace {
     }
 
 
-    private void SaveFacesInNewImages(Mat src, params CascadeClassifier[] cascade) { 
+    public void SaveFacesInNewImages(Mat src, params CascadeClassifier[] cascade) {
+        if (src.Empty())
+        {
+            return;
+        }
+
         Rect[] faces = GetFaces(src, cascade);
-        Console.WriteLine(faces.Length); // DEBUG
-        string path = DataPath.ImagesOutput;
+        string OutputPath = DataPath.ImagesCheck;
         
-        int index = 0;
+
         foreach (Rect face in faces) {
+            Console.WriteLine("Saving face " + imgnum);
             var faceImage = src.SubMat(face);
-            string number = index.ToString(); 
-            Cv2.ImWrite(path + number + ".jpg", faceImage);
-            index++; 
+            faceImage = faceImage.Resize(new Size(200, 200));
+            faceImage = faceImage.CvtColor(ColorConversionCodes.BGR2GRAY);
+            string number = imgnum.ToString(); 
+            Cv2.ImWrite(OutputPath + number + ".jpg", faceImage);
+            imgnum++; 
         }
     }
 
@@ -76,7 +98,7 @@ class DetectFace {
         // Detect faces
         Rect[] faces = GetFaces(src, cascade);
         if (faces.Length == 0) {
-            return null;
+            return src;
         }
 
         // Render all detected faces
