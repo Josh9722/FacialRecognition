@@ -4,9 +4,10 @@ using OpenCvSharp;
 using OpenCvSharp.Face;
 
 public class FaceRecognition { 
+    private EigenFaceRecognizer recognizer;
     public FaceRecognition() {
         // Create the recognizer
-        var recognizer = EigenFaceRecognizer.Create();
+        recognizer = EigenFaceRecognizer.Create();
 
         // Load the training data
         Mat[] images = LoadTrainingImages();
@@ -14,15 +15,6 @@ public class FaceRecognition {
 
         // Train the recognizer
         recognizer.Train(images, labels);
-
-        // Load the test image
-        Mat testImage = LoadTestImage();
-
-        // Predict the label of the test image
-        int predictedLabel = recognizer.Predict(testImage);
-
-        // Print the predicted label
-        Console.WriteLine("Predicted label: " + predictedLabel);
     }
 
     private Mat[] LoadTrainingImages() {
@@ -37,8 +29,8 @@ public class FaceRecognition {
         for (int i = 0; i < filePaths.Length; i++)
         {
             // Normalise images to greyscale and 100x100
-            Mat image = new Mat(filePaths[i], ImreadModes.Grayscale);
-            Cv2.Resize(image, image, new Size(100, 100));
+            Mat image = new Mat(filePaths[i], ImreadModes.Color);
+            image = NormaliseMat(image);
             images[i] = image;
         }
         return images;
@@ -50,29 +42,61 @@ public class FaceRecognition {
         int num = Directory.GetFiles(DataPath.TrainingRecognitionImages).Length;
         int[] labels = new int[num];
         for (int i = 0; i < num; i++) {
-            labels[i] = 1;
+            labels[i] = 0;
         }
         return labels; 
     }
 
+    public void RecogniseAllFaces(Mat src, string origin = "", bool save = false) {
+        Rect[] faces = new DetectFace().GetFaces(src);
+        foreach (Rect face in faces) {
+            Mat faceImage = src.SubMat(face);
+            NormaliseMat(faceImage);
+            RecogniseFace(faceImage, origin, save);
+        }
+    }
 
-    private Mat LoadTestImage() { 
-        // Load image
-        string testImagePath = DataPath.RecognitionTestImage;
-        Mat testImage = new Mat(testImagePath, ImreadModes.Grayscale);
+    private void RecogniseFace(Mat src, string origin, bool save) {
+        if (src == null || src.Empty()) { 
+            return; 
+        }
 
-        // Find face(s) in image
-        Rect[] faces = new DetectFace().GetFaces(testImage);
+        // Load the test image
+        Mat testImage = src;
+        testImage = NormaliseMat(testImage);
 
-        // Temp: Take first face found
-        Rect face = faces[0];
+        // Predict the label of the test image
+        int predictedLabel; 
+        double confidence; // Low = good match  
+        recognizer.Predict(testImage, out predictedLabel, out confidence);
 
-        // Convert face to mat 
-        testImage = testImage.SubMat(face);
+
+        // Print the predicted label
+        Console.WriteLine("Predicted label: " + predictedLabel + " (confidence: " + confidence + ")");
+        
+        // Save image with file origin name and confidence
+        if (save) {
+            if (origin != "")
+            {
+                origin = "From " + origin + "  ";
+            }
+            string OutputPath = DataPath.ImagesOutput;
+            string confidenceString = "Confidence " + ((int)confidence).ToString();
+            string FileName = origin + confidenceString + ".jpg";
+            Cv2.ImWrite(OutputPath + FileName, testImage);
+        }  
+    }
+
+    private Mat NormaliseMat(Mat src) {
+        if (src == null || src.Empty()) { 
+            Console.WriteLine("Mat is empty");
+            return new Mat(); 
+        }
 
         // Convert to greyscale and 100x100
-        Cv2.CvtColor(testImage, testImage, ColorConversionCodes.BGR2GRAY);
-        Cv2.Resize(testImage, testImage, new Size(100, 100));
-        return testImage;
+        Mat newImage = src.Clone(); 
+        Cv2.CvtColor(newImage, newImage, ColorConversionCodes.BGR2GRAY);
+        Cv2.Resize(newImage, newImage, new Size(200, 200));
+        return newImage; 
     }
 }
