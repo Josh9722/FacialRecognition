@@ -14,13 +14,14 @@ class DetectFace {
 
     }
 
-    private Rect[] GetFaces(Mat src, params CascadeClassifier[] ListOfCascades)
+    // Returns a list of faces in an image
+    public Rect[] GetFaces(Mat src, params CascadeClassifier[] ListOfCascades)
     {
         List<Rect> faces = new List<Rect>();
         CascadeClassifier[] cascades = ListOfCascades;
         using Mat gray = new Mat();
 
-
+        // Using multiple cascades to increase accuracy
         foreach (CascadeClassifier cascade in cascades)
         {
             int[] rejectLevels;
@@ -28,12 +29,14 @@ class DetectFace {
             Rect[] detectedFaces =  cascade.DetectMultiScale(src, out rejectLevels, out levelWeights, 1.08, 2, HaarDetectionTypes.ScaleImage, outputRejectLevels: true);
 
             foreach (Rect detectedFace in detectedFaces) {
+                // Reject faces with low confidence
                 double l = levelWeights[Array.IndexOf(detectedFaces, detectedFace)]; 
                 float r = rejectLevels[Array.IndexOf(detectedFaces, detectedFace)];
                 if (l <= 5) { 
                     continue; 
                 }
 
+                // Reject faces that are already in the list (from previous cascades)
                 if (!faces.Any(face => face.IntersectsWith(detectedFace) || face.Contains(detectedFace))) { 
                     faces.Add(detectedFace);
                 }
@@ -58,7 +61,7 @@ class DetectFace {
         }
     }
 
-
+    // 
     public Mat FindFace(Mat src, params CascadeClassifier[] cascade)
     {
         if (src == null || src.Empty())
@@ -68,7 +71,6 @@ class DetectFace {
 
         Mat result = src.Clone();
         Mat gray = new Mat();
-
         Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
 
         // Detect faces
