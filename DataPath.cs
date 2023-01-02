@@ -1,8 +1,10 @@
 public static class DataPath {
 
     // Face Recognition
-    public const string TrainingRecognitionImages = "Data/TrainingRecognitionImages/"; // Folder with all images to train recognition algorithm
-    public const string RecognitionTestImage = "Data/RecognitionTestImage.jpg"; // Test image for recognition algorithm
+    public const string TrainingRecognitionImages = "Data/Images/FaceRecognitionTraining/"; // Folder with all images to train recognition algorithm
+    public const string RecognitionTestImage = "Data/Images/RecognitionTestImage.jpg"; // Test image for recognition algorithm
+    public const string a = "Data/Images/ImagesCheck/a.jpg";
+    public const string b = "Data/Images/ImagesCheck/b.jpg";
 
 
     // Images Folders
