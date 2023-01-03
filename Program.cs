@@ -13,13 +13,20 @@ using System.Text;
 
 namespace FacialRecognition
 {
-    public static class ImageProcessing
+    public static class Program
     {
+        public static bool RequiresTraining = false; 
+        private static FaceRecognition? faceRecognition; 
+
         public static void Main(string[] args)
         {
-            // DetectFace face = new DetectFace();
-            // face.RunTest();  
-            new CameraFeed(); 
+            faceRecognition = new FaceRecognition();
+
+            if (RequiresTraining) {
+                new GenerateTrainingImages();
+            } 
+
+            faceRecognition.RecogniseAllFaces(new Mat(DataPath.a, ImreadModes.Color), "b", true);
             
         }
         
