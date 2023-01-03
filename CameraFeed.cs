@@ -6,40 +6,46 @@ using OpenCvSharp;
 
 class CameraFeed
 {
-    public bool reading = true; // Can use this from other classes to stop loop if needed
+    public bool reading = true; 
     private VideoCapture capture;
     private Mat frame;
-    private Thread faceDetection;
-    private Mat processedFrame;
-    private bool frameReady = false; // Used to check if frame is ready to be processed
-    private DetectFace detectFace = new DetectFace(); 
+    private int FreezeDuration; // How long to freeze frame
+    private int WaitDuration; // How long to wait before taking regular input again 
+
+
+    public Mat facesFrame; 
+    public Mat processedFrame; // Used for adding a modified frame to the camera feed
+    public bool frameReady = false;
+
+
+    private Thread FaceDetection;
+    private Thread CountDown; 
+    private DetectFace DetectFace; 
     
-    private int FreezeDuration; // How long to freeze frame on the identified face
-    private int WaitDuration; // How long to wait before attempting to detect a face again 
 
-
-
+    // ************ CONSTRUCTOR ************
     public CameraFeed()
     {
-        // Init
-        frame = new Mat();
+        // Init Variables
+        frame = new Mat(); // Realtime frame
+        facesFrame = frame.Clone(); // Frame with identified faces
+        processedFrame = frame.Clone(); // Frame with circled faces
         capture = new VideoCapture(0);
-        Console.WriteLine("Using: " + capture.GetBackendName());
-        processedFrame = frame.Clone(); 
+        DetectFace = new DetectFace();
 
-        // Start duration countdown thread
-        Thread CountDown = new Thread(durationCountdown); 
+        // Threads        
+        FaceDetection = new Thread(DetectFaceInBackground);
+        FaceDetection.Start();
+        CountDown = new Thread(durationCountdown);
         CountDown.Start();
 
-        // Start face detection thread
-        faceDetection = new Thread(DetectFaceInBackground);
-        faceDetection.Start();
-
         // Start camera feed
-        StartFeed();
-
+        Thread CameraFeed = new Thread(StartFeed);
+        CameraFeed.Start();
     }
+    
 
+    // ************ PRIVATE METHODS ************
     private void StartFeed()
     {
         // Handle errors
@@ -49,8 +55,6 @@ class CameraFeed
             return;
         }
 
-
-        // Camera output loop 
         while (reading)
         {
             capture.Read(frame);
@@ -70,28 +74,6 @@ class CameraFeed
         }
     }
 
-    private void DetectFaceInBackground()
-    {
-        // Use all cascades
-        string[] cascadePaths = DataPath.AllCascades();
-        CascadeClassifier[] allCascades = new CascadeClassifier[cascadePaths.Length];
-        for (int i = 0; i < cascadePaths.Length; i++)
-        {
-            allCascades[i] = new CascadeClassifier(cascadePaths[i]);
-        }
-
-        // Detect faces
-        while (reading) {
-            processedFrame = detectFace.FindFace(frame, allCascades);
-            //detectFace.SaveFacesInNewImages(frame, allCascades);
-            if (processedFrame != null) {
-                frameReady = true;
-            } else { 
-                frameReady = false;
-            }
-        }
-    }
-
     private void Display()
     {
         if (FreezeDuration != 0)
@@ -105,11 +87,32 @@ class CameraFeed
             Cv2.ImShow("Camera", processedFrame);
             FreezeDuration = 1000;
             WaitDuration = 2000;
-        } else { 
+        }
+        else
+        {
             Cv2.ImShow("Camera", frame);
         }
     }
 
+    private void DetectFaceInBackground()
+    {
+        CascadeClassifier[] allCascades = DetectFace.GetAllCascades();
+
+        while (reading)
+        {
+            Mat currentFrame = frame.Clone();
+            processedFrame = DetectFace.FindFace(currentFrame, allCascades);
+            if (processedFrame == currentFrame) { 
+                frameReady = false;
+            } else {
+                facesFrame = currentFrame; 
+                frameReady = true;
+            }
+        }
+    }
+
+
+    // ************ HELPER METHODS ************
     private void durationCountdown()
     {
         int decrement = 100; 
@@ -140,5 +143,4 @@ class CameraFeed
             Thread.Sleep(wait);
         }
     }
-
 }
