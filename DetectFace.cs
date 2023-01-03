@@ -2,17 +2,15 @@ using OpenCvSharp;
 
 
 class DetectFace {
-    private int imgnum = 0; 
 
-    public void RunTest()
+    public CascadeClassifier[] GetAllCascades()
     {
-        // Load the cascades
         string[] cascadePaths = DataPath.AllCascades();
         CascadeClassifier[] allCascades = new CascadeClassifier[cascadePaths.Length];
         for(int i = 0; i < cascadePaths.Length; i++) {
             allCascades[i] = new CascadeClassifier(cascadePaths[i]);
         }
-
+        return allCascades; 
     }
 
     // Returns a list of faces in an image
@@ -62,28 +60,7 @@ class DetectFace {
     }
 
 
-    public void SaveFacesInNewImages(Mat src, params CascadeClassifier[] cascade) {
-        if (src.Empty())
-        {
-            return;
-        }
-
-        Rect[] faces = GetFaces(src, cascade);
-        string OutputPath = DataPath.ImagesCheck;
-        
-
-        foreach (Rect face in faces) {
-            Console.WriteLine("Saving face " + imgnum);
-            var faceImage = src.SubMat(face);
-            faceImage = faceImage.Resize(new Size(200, 200));
-            faceImage = faceImage.CvtColor(ColorConversionCodes.BGR2GRAY);
-            string number = imgnum.ToString(); 
-            Cv2.ImWrite(OutputPath + number + ".jpg", faceImage);
-            imgnum++; 
-        }
-    }
-
-    // 
+    // Circle found faces
     public Mat FindFace(Mat src, params CascadeClassifier[] cascade)
     {
         if (src == null || src.Empty())
