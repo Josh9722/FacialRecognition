@@ -6,18 +6,21 @@ using OpenCvSharp;
 
 class CameraFeed
 {
-    public bool reading = true; 
+    public bool reading = true;
+    public bool RecognitionRespectsTimer = false; // If true, recognition will only run after the timer has expired
     private bool DetectingFaces = false; 
     private bool RecognisingFaces = false;
     private VideoCapture capture;
     private Mat frame;
+
     private DetectFace DetectFace;
+    private FaceRecognition FaceRecognition;
 
     // Frame Timings
     private int _FreezeDuration = 0; // How long to freeze frame after a processed frame has been used
     private int _WaitDuration = 0; // How long to wait before attempting to use processedframe 
     public int FreezeTime = 1000; 
-    public int WaitTime = 2000;
+    public int WaitTime = 4000;
 
     // New Frames
     public Mat facesFrame; 
@@ -25,8 +28,8 @@ class CameraFeed
     public bool frameReady = false;
 
     // Threads
-    private Thread FaceDetection;
-    private Thread FaceRecognition; 
+    private Thread FaceDetectionThread;
+    private Thread FaceRecognitionThread; 
     private Thread CountDown; 
     
 
@@ -38,11 +41,10 @@ class CameraFeed
         facesFrame = frame.Clone(); // Frame with identified faces
         processedFrame = frame.Clone(); // Frame with circled faces
         capture = new VideoCapture(0);
-        DetectFace = new DetectFace();
 
         // Threads        
-        FaceDetection = new Thread(DetectFaceInBackground);
-        FaceRecognition = new Thread(RecogniseFaceInBackground);
+        FaceDetectionThread = new Thread(DetectFaceInBackground);
+        FaceRecognitionThread = new Thread(RecogniseFaceInBackground);
         CountDown = new Thread(durationCountdown);
         CountDown.Start();
 
@@ -90,6 +92,8 @@ class CameraFeed
 
         if (frameReady && _WaitDuration == 0)
         {
+            PerformTimedActions();
+
             frameReady = false;
             Cv2.ImShow("Camera", processedFrame);
             _FreezeDuration = FreezeTime;
@@ -98,6 +102,14 @@ class CameraFeed
         else
         {
             Cv2.ImShow("Camera", frame);
+        }
+    }
+
+    private void PerformTimedActions() { 
+        if (RecognitionRespectsTimer) {
+            Console.WriteLine("New recognition...");
+            FaceRecognition.RecogniseAllFaces(facesFrame, "", true);
+            Console.WriteLine("Recognition complete");
         }
     }
 
@@ -117,19 +129,29 @@ class CameraFeed
     }
 
     private void RecogniseFaceInBackground() { 
+        // Create new array of type Mat to store last faces recognised
+        Mat lastRecognition = facesFrame;
         while (reading) {
-
+            if (RecognitionRespectsTimer) {
+                continue; 
+            }
+            if (facesFrame != lastRecognition) { 
+                FaceRecognition.RecogniseAllFaces(facesFrame);
+                lastRecognition = facesFrame;
+            } 
         }
     }
 
 
     // ************ PUBLIC METHODS ************
-    public void StartFaceDetection() { // parms for detectface class
+    public void StartFaceDetection(DetectFace detection) { // parms for detectface class
         if (DetectingFaces) {
             Console.WriteLine("Already detecting faces");
         } else {
             DetectingFaces = true;
-            FaceDetection.Start();
+
+            DetectFace = detection; 
+            FaceDetectionThread.Start();
         }
     }
 
@@ -138,7 +160,9 @@ class CameraFeed
             Console.WriteLine("Already recognising faces");
         } else {
             RecognisingFaces = true;
-            FaceRecognition.Start(); 
+
+            FaceRecognition = recognition;
+            FaceRecognitionThread.Start(); 
         }
     }
 
