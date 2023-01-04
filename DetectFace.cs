@@ -1,5 +1,14 @@
 using OpenCvSharp;
 
+/* 
+This class is used for detecting face(s) in an image
+This is accomplished through the approach of cascade classifiers (Haar and Lbp)
+ - This approach is less accurate but much faster than using alternative machine learning models
+ - The issue of lower accuracy in the approach is addressed by the following:
+    -> Consistently using different frames from the camera, 
+    -> Using multiple cascades
+    -> Rejecting faces with a low 'confidence' score
+*/ 
 
 class DetectFace {
 
@@ -60,7 +69,7 @@ class DetectFace {
     }
 
 
-    // Circle found faces
+    // Draws a circle around the all found faces
     public Mat FindFace(Mat src, params CascadeClassifier[] cascade)
     {
         if (src == null || src.Empty())
@@ -72,13 +81,13 @@ class DetectFace {
         Mat gray = new Mat();
         Cv2.CvtColor(src, gray, ColorConversionCodes.BGR2GRAY);
 
-        // Detect faces
+        // Face detection
         Rect[] faces = GetFaces(src, cascade);
         if (faces.Length == 0) {
             return src;
         }
 
-        // Render all detected faces
+        // Circle all detected faces
         foreach (Rect face in faces)
         {
             var center = new Point
