@@ -30,6 +30,7 @@ class CameraFeed
     // Threads
     private Thread FaceDetectionThread;
     private Thread FaceRecognitionThread; 
+    private static Thread CameraFeedThread; 
     private Thread CountDown; 
     
 
@@ -49,8 +50,10 @@ class CameraFeed
         CountDown.Start();
 
         // Start camera feed
-        Thread CameraFeed = new Thread(StartFeed);
-        CameraFeed.Start();
+        if (CameraFeedThread == null) {
+            CameraFeedThread = new Thread(StartFeed);
+            CameraFeedThread.Start();
+        }
     }
     
 
@@ -117,21 +120,27 @@ class CameraFeed
     {
         while (reading)
         {
-            Mat currentFrame = frame.Clone();
-            processedFrame = DetectFace.FindFace(currentFrame); 
-            if (processedFrame == currentFrame) { // No face detected if frames are the same  
-                frameReady = false;
-            } else {
-                facesFrame = currentFrame; 
-                frameReady = true;
+            while (DetectingFaces) {
+                Mat currentFrame = frame.Clone();
+                processedFrame = DetectFace.FindFace(currentFrame);
+                if (processedFrame == currentFrame)
+                { // No face detected if frames are the same  
+                    frameReady = false;
+                }
+                else
+                {
+                    facesFrame = currentFrame;
+                    frameReady = true;
+                }
             }
+            
         }
     }
 
     private void RecogniseFaceInBackground() { 
         // Create new array of type Mat to store last faces recognised
         Mat lastRecognition = facesFrame;
-        while (reading) {
+        while (reading && RecognisingFaces) {
             if (RecognitionRespectsTimer) {
                 continue; 
             }
@@ -145,13 +154,28 @@ class CameraFeed
 
     // ************ PUBLIC METHODS ************
     public void StartFaceDetection(DetectFace detection) { // parms for detectface class
+        if (FaceDetectionThread.IsAlive) {
+            Console.WriteLine("Already detecting faces");
+        } else {
+            DetectingFaces = true;
+            DetectFace = detection; 
+            FaceDetectionThread.Start();
+        }
+    }
+
+    public void PauseFaceDetection() { 
+        if (DetectingFaces) {
+            DetectingFaces = false;
+        } else {
+            Console.WriteLine("Already not detecting faces");
+        }
+    }
+
+    public void RestartFaceDetection() { 
         if (DetectingFaces) {
             Console.WriteLine("Already detecting faces");
         } else {
             DetectingFaces = true;
-
-            DetectFace = detection; 
-            FaceDetectionThread.Start();
         }
     }
 
