@@ -29,7 +29,7 @@ class GenerateTrainingImages {
     private void QueryUser() { 
         bool detectionStarted = false;
         bool addingFaces = true;
-        int personLabel = 0; 
+        int personLabel = GetHighestLabel() + 1;
         while (addingFaces) { 
             Console.WriteLine("Press enter to start training on a new face. Please ensure you are the only face in the frame.");
             Console.WriteLine("Press spacebar to exit out of the training program");
@@ -88,5 +88,17 @@ class GenerateTrainingImages {
         }
 
         Utilities.SaveAllFaces(frame, out numFaces, path);
+    }
+
+    private int GetHighestLabel() { 
+        int highestLabel = -1;
+        foreach (string name in Directory.GetDirectories(OutputPath)) {
+            string[] split = name.Split(' ');
+            int label = int.Parse(split[split.Length - 1]);
+            if (label > highestLabel) {
+                highestLabel = label;
+            }
+        }
+        return highestLabel;
     }
 }
