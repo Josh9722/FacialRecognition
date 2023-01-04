@@ -8,20 +8,26 @@ class CameraFeed
 {
     public bool reading = true; 
     private bool DetectingFaces = false; 
+    private bool RecognisingFaces = false;
     private VideoCapture capture;
     private Mat frame;
-    private int FreezeDuration; // How long to freeze frame
-    private int WaitDuration; // How long to wait before taking regular input again 
+    private DetectFace DetectFace;
 
+    // Frame Timings
+    private int _FreezeDuration = 0; // How long to freeze frame after a processed frame has been used
+    private int _WaitDuration = 0; // How long to wait before attempting to use processedframe 
+    public int FreezeTime = 1000; 
+    public int WaitTime = 2000;
 
+    // New Frames
     public Mat facesFrame; 
     public Mat processedFrame; // Used for adding a modified frame to the camera feed
     public bool frameReady = false;
 
-
+    // Threads
     private Thread FaceDetection;
+    private Thread FaceRecognition; 
     private Thread CountDown; 
-    private DetectFace DetectFace; 
     
 
     // ************ CONSTRUCTOR ************
@@ -36,6 +42,7 @@ class CameraFeed
 
         // Threads        
         FaceDetection = new Thread(DetectFaceInBackground);
+        FaceRecognition = new Thread(RecogniseFaceInBackground);
         CountDown = new Thread(durationCountdown);
         CountDown.Start();
 
@@ -76,17 +83,17 @@ class CameraFeed
 
     private void Display()
     {
-        if (FreezeDuration != 0)
+        if (_FreezeDuration != 0)
         {
             return;
         }
 
-        if (frameReady && WaitDuration == 0)
+        if (frameReady && _WaitDuration == 0)
         {
             frameReady = false;
             Cv2.ImShow("Camera", processedFrame);
-            FreezeDuration = 1000;
-            WaitDuration = 2000;
+            _FreezeDuration = FreezeTime;
+            _WaitDuration = WaitTime;
         }
         else
         {
@@ -99,8 +106,8 @@ class CameraFeed
         while (reading)
         {
             Mat currentFrame = frame.Clone();
-            processedFrame = DetectFace.FindFace(currentFrame);
-            if (processedFrame == currentFrame) { 
+            processedFrame = DetectFace.FindFace(currentFrame); 
+            if (processedFrame == currentFrame) { // No face detected if frames are the same  
                 frameReady = false;
             } else {
                 facesFrame = currentFrame; 
@@ -109,14 +116,29 @@ class CameraFeed
         }
     }
 
+    private void RecogniseFaceInBackground() { 
+        while (reading) {
+
+        }
+    }
+
 
     // ************ PUBLIC METHODS ************
-    public void StartFaceDetection() {
+    public void StartFaceDetection() { // parms for detectface class
         if (DetectingFaces) {
             Console.WriteLine("Already detecting faces");
         } else {
             DetectingFaces = true;
             FaceDetection.Start();
+        }
+    }
+
+    public void StartFaceRecognition(FaceRecognition recognition) { 
+        if (RecognisingFaces) {
+            Console.WriteLine("Already recognising faces");
+        } else {
+            RecognisingFaces = true;
+            FaceRecognition.Start(); 
         }
     }
 
@@ -130,23 +152,23 @@ class CameraFeed
         while (reading)
         {
             // Decrement durations
-            if (FreezeDuration > 0)
+            if (_FreezeDuration > 0)
             {
-                FreezeDuration -= decrement;
+                _FreezeDuration -= decrement;
             }
-            if (WaitDuration > 0)
+            if (_WaitDuration > 0)
             {
-                WaitDuration -= decrement;
+                _WaitDuration -= decrement;
             }
             
             // Fix for sub 0 durations
-            if (FreezeDuration < 0)
+            if (_FreezeDuration < 0)
             {
-                FreezeDuration = 0;
+                _FreezeDuration = 0;
             }
-            if (WaitDuration < 0)
+            if (_WaitDuration < 0)
             {
-                WaitDuration = 0;
+                _WaitDuration = 0;
             }
 
             Thread.Sleep(wait);
