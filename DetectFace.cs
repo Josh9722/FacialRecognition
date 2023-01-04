@@ -24,27 +24,18 @@ class DetectFace {
 
     // Returns a list of faces in an image
     public Rect[] GetFaces(Mat src, params CascadeClassifier[] ListOfCascades)
-    {
-        CascadeClassifier[] cascades; 
+    { 
         if (ListOfCascades.Length == 0) {
-            // Use all cascades
-            string[] cascadePaths = DataPath.AllCascades();
-            CascadeClassifier[] allCascades = new CascadeClassifier[cascadePaths.Length];
-            for (int i = 0; i < cascadePaths.Length; i++)
-            {
-                allCascades[i] = new CascadeClassifier(cascadePaths[i]);
-            }
-            cascades = allCascades;
-        } else {
-            cascades = ListOfCascades;
-        }
+            ListOfCascades = GetAllCascades();
+        } 
+
         List<Rect> faces = new List<Rect>();
         
         
         using Mat gray = new Mat();
 
         // Using multiple cascades to increase accuracy
-        foreach (CascadeClassifier cascade in cascades)
+        foreach (CascadeClassifier cascade in ListOfCascades)
         {
             int[] rejectLevels;
             double[] levelWeights;
