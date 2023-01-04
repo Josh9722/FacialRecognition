@@ -5,9 +5,12 @@ using OpenCvSharp.Face;
 
 public class FaceRecognition { 
     private EigenFaceRecognizer recognizer;
+    private DetectFace detection;
+    
     public FaceRecognition() {
         // Create the recognizer
         recognizer = EigenFaceRecognizer.Create();
+        detection = new DetectFace(); 
 
         // Load the training data
         Mat[] images = LoadTrainingImages();
@@ -30,7 +33,7 @@ public class FaceRecognition {
         {
             // Normalise images to greyscale and 100x100
             Mat image = new Mat(filePaths[i], ImreadModes.Color);
-            image = NormaliseMat(image);
+            image = ImageProcessing.NormaliseMat(image);
             images[i] = image;
         }
         return images;
@@ -48,10 +51,10 @@ public class FaceRecognition {
     }
 
     public void RecogniseAllFaces(Mat src, string origin = "", bool save = false) {
-        Rect[] faces = new DetectFace().GetFaces(src);
+        Rect[] faces = detection.GetFaces(src);
         foreach (Rect face in faces) {
             Mat faceImage = src.SubMat(face);
-            NormaliseMat(faceImage);
+            ImageProcessing.NormaliseMat(faceImage);
             RecogniseFace(faceImage, origin, save);
         }
     }
@@ -63,7 +66,7 @@ public class FaceRecognition {
 
         // Load the test image
         Mat testImage = src;
-        testImage = NormaliseMat(testImage);
+        testImage = ImageProcessing.NormaliseMat(testImage);
 
         // Predict the label of the test image
         int predictedLabel; 
@@ -81,22 +84,10 @@ public class FaceRecognition {
                 origin = "From " + origin + "  ";
             }
             string OutputPath = DataPath.ImagesOutput;
+            string predictedLabelString = "Predicted " + predictedLabel.ToString();
             string confidenceString = "Confidence " + ((int)confidence).ToString();
-            string FileName = origin + confidenceString + ".jpg";
+            string FileName = origin + predictedLabelString + confidenceString + ".jpg";
             Cv2.ImWrite(OutputPath + FileName, testImage);
         }  
-    }
-
-    private Mat NormaliseMat(Mat src) {
-        if (src == null || src.Empty()) { 
-            Console.WriteLine("Mat is empty");
-            return new Mat(); 
-        }
-
-        // Convert to greyscale and 100x100
-        Mat newImage = src.Clone(); 
-        Cv2.CvtColor(newImage, newImage, ColorConversionCodes.BGR2GRAY);
-        Cv2.Resize(newImage, newImage, new Size(200, 200));
-        return newImage; 
     }
 }
