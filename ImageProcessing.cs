@@ -10,7 +10,13 @@ static class ImageProcessing {
         return alternatives; 
     }
     
-    public static Mat PreProcess(Mat src) { // Should be run on Mat's containing face only
+    public static Mat NormaliseMat(Mat src) { // Should be run on Mat's containing face only
+        if (src == null || src.Empty())
+        {
+            Console.WriteLine("Mat is empty");
+            return new Mat();
+        }
+        
         Mat grey = src.Clone();
         Cv2.CvtColor(src, grey, ColorConversionCodes.BGR2GRAY);
         Mat result = grey.Resize(new Size(200, 200));

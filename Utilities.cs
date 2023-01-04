@@ -38,7 +38,7 @@ public static class Utilities
         } 
 
         Mat faceImage = parent.SubMat(face);
-        faceImage = ImageProcessing.PreProcess(faceImage);
+        faceImage = ImageProcessing.NormaliseMat(faceImage);
         Cv2.ImWrite(path + imgnum.ToString() + ".jpg", faceImage);
         imgnum++;
     }
