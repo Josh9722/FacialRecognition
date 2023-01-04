@@ -6,6 +6,7 @@ using OpenCvSharp.Face;
 public class FaceRecognition { 
     private EigenFaceRecognizer recognizer;
     private DetectFace detection;
+    private string InputPath = DataPath.TrainingRecognitionImages;
     
     public FaceRecognition() {
         // Create the recognizer
@@ -13,41 +14,39 @@ public class FaceRecognition {
         detection = new DetectFace(); 
 
         // Load the training data
-        Mat[] images = LoadTrainingImages();
-        int[] labels = LoadTrainingLabels();
+        Mat[] images; 
+        int[] labels;
+        LoadTrainingData(out images, out labels);
 
         // Train the recognizer
         recognizer.Train(images, labels);
     }
 
-    private Mat[] LoadTrainingImages() {
-        // Set the path to the directory containing the training images
-        string trainingDataPath = DataPath.TrainingRecognitionImages;
+    private void LoadTrainingData(out Mat[] images, out int[] labels) {
+        int NumberOfFiles = Directory.GetFiles(InputPath, "*.jpg", SearchOption.AllDirectories).Length;
+        Console.WriteLine(NumberOfFiles + " ---");
+        images = new Mat[NumberOfFiles];
+        labels = new int[NumberOfFiles];
 
-        // Get a list of all file paths in the directory
-        string[] filePaths = Directory.GetFiles(trainingDataPath);
+        int labelNumber = 0; 
+        int index = 0; 
+        foreach (string folder in Directory.EnumerateDirectories(InputPath)) {
+            Console.WriteLine("Loading training data from " + Path.GetFileName(folder));
+            Console.WriteLine("Label number: " + labelNumber.ToString());
+            string[] filePaths = Directory.GetFiles(folder);
+            for (int i = 0; i < filePaths.Length; i++) {
+                Console.WriteLine("Loading File: " + Path.GetFileName(filePaths[i]) ); 
 
-        // Load the images and return them as an array of Mat objects
-        Mat[] images = new Mat[filePaths.Length];
-        for (int i = 0; i < filePaths.Length; i++)
-        {
-            // Normalise images to greyscale and 100x100
-            Mat image = new Mat(filePaths[i], ImreadModes.Color);
-            image = ImageProcessing.NormaliseMat(image);
-            images[i] = image;
+                Mat image = new Mat(filePaths[i], ImreadModes.Color);
+                image = ImageProcessing.NormaliseMat(image);
+                images[index] = image;
+                
+                labels[index] = labelNumber;
+                
+                index++; 
+            }
+            labelNumber++; 
         }
-        return images;
-    }
-
-
-    // Each face from the same person should share the same label
-    private int[] LoadTrainingLabels() { 
-        int num = Directory.GetFiles(DataPath.TrainingRecognitionImages).Length;
-        int[] labels = new int[num];
-        for (int i = 0; i < num; i++) {
-            labels[i] = 0;
-        }
-        return labels; 
     }
 
     public void RecogniseAllFaces(Mat src, string origin = "", bool save = false) {
