@@ -7,6 +7,7 @@ using OpenCvSharp;
 class CameraFeed
 {
     public bool reading = true; 
+    private bool DetectingFaces = false; 
     private VideoCapture capture;
     private Mat frame;
     private int FreezeDuration; // How long to freeze frame
@@ -35,7 +36,6 @@ class CameraFeed
 
         // Threads        
         FaceDetection = new Thread(DetectFaceInBackground);
-        FaceDetection.Start();
         CountDown = new Thread(durationCountdown);
         CountDown.Start();
 
@@ -96,18 +96,27 @@ class CameraFeed
 
     private void DetectFaceInBackground()
     {
-        CascadeClassifier[] allCascades = DetectFace.GetAllCascades();
-
         while (reading)
         {
             Mat currentFrame = frame.Clone();
-            processedFrame = DetectFace.FindFace(currentFrame, allCascades);
+            processedFrame = DetectFace.FindFace(currentFrame);
             if (processedFrame == currentFrame) { 
                 frameReady = false;
             } else {
                 facesFrame = currentFrame; 
                 frameReady = true;
             }
+        }
+    }
+
+
+    // ************ PUBLIC METHODS ************
+    public void StartFaceDetection() {
+        if (DetectingFaces) {
+            Console.WriteLine("Already detecting faces");
+        } else {
+            DetectingFaces = true;
+            FaceDetection.Start();
         }
     }
 
