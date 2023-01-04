@@ -8,8 +8,14 @@ public static class Utilities
 
 
     // ************ PUBLIC METHODS ************
-    public static void SaveAllFaces(Mat src, string path = "") // Save all faces in a mat to jpgs at path
+    public static void SaveAllFaces(Mat src, string path = "") { 
+        int numFaces = 0;
+        SaveAllFaces(src, out numFaces, path);
+    }
+    
+    public static void SaveAllFaces(Mat src, out int numFaces, string path = "") // Save all faces in a mat to jpgs at path
     {
+        numFaces = 0;
         if (src == null || src.Empty())
         {
             return;
@@ -18,6 +24,7 @@ public static class Utilities
         Rect[] faces = new DetectFace().GetFaces(src);
         foreach (Rect face in faces)
         {
+            numFaces++;
             SaveFace(src, face, path);
         }
     }
