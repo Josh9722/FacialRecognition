@@ -6,7 +6,7 @@ using OpenCvSharp;
 
 class CameraFeed
 {
-    public bool reading = true;
+    public bool reading = false;
     public bool RecognitionRespectsTimer = false; // If true, recognition will only run after the timer has expired
     private bool DetectingFaces = false; 
     private bool RecognisingFaces = false;
@@ -52,7 +52,6 @@ class CameraFeed
         // Start camera feed
         if (CameraFeedThread == null) {
             CameraFeedThread = new Thread(StartFeed);
-            CameraFeedThread.Start();
         }
     }
     
@@ -60,6 +59,7 @@ class CameraFeed
     // ************ PRIVATE METHODS ************
     private void StartFeed()
     {
+        reading = true;
         // Handle errors
         if (!capture.IsOpened())
         {
@@ -88,6 +88,7 @@ class CameraFeed
 
     private void Display()
     {
+        
         if (_FreezeDuration != 0)
         {
             return;
@@ -95,6 +96,7 @@ class CameraFeed
 
         if (frameReady && _WaitDuration == 0)
         {
+            Console.WriteLine("Displaying...");
             PerformTimedActions();
 
             frameReady = false;
@@ -153,6 +155,14 @@ class CameraFeed
 
 
     // ************ PUBLIC METHODS ************
+    public void StartCameraFeed() { 
+        if (CameraFeedThread.IsAlive) {
+            Console.WriteLine("Already reading camera feed");
+        } else {
+            CameraFeedThread.Start();
+        }
+    }
+    
     public void StartFaceDetection(DetectFace detection) { // parms for detectface class
         if (FaceDetectionThread.IsAlive) {
             Console.WriteLine("Already detecting faces");
