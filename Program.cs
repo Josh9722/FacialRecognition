@@ -13,25 +13,32 @@ using System.Text;
 
 namespace FacialRecognition
 {
-    public static class Program
+    public class Program
     {
         // ************************* PRIVATE CLASS VARIABLES *************************
         private static bool RequiresTraining = false;
 
 
         // ************************* OBJECT INSTANTIATIONS *************************
-        private static DetectFace detectFace = new DetectFace();
-        private static FaceRecognition faceRecognition = new FaceRecognition();
-        private static CameraFeed cameraFeed = new CameraFeed(); 
+        private static DetectFace detectFace;
+        private static FaceRecognition faceRecognition;
+        private static CameraFeed cameraFeed;
 
 
         public static void Main(string[] args)
         {
+            // Training
             if (RequiresTraining)
             {
                 new GenerateTrainingImages();
                 return; 
             }
+
+            // Initalise the objects
+            detectFace = new DetectFace();
+            faceRecognition = new FaceRecognition();
+            cameraFeed = new CameraFeed();
+
             
             SampleDetection(DataPath.PeopleGrid); // Finds and circles faces in the image at the given path
             SampleRecognition(DataPath.RecognitionTestImage); // Console outputs prediction for each face in the image at the given path 

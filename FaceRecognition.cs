@@ -8,6 +8,7 @@ public class FaceRecognition {
     private EigenFaceRecognizer recognizer;
     private DetectFace detection;
     private string InputPath = DataPath.TrainingRecognitionImages;
+    private bool isTrained = false;
     
 
     // ************************* CONSTRUCTOR *************************
@@ -23,8 +24,10 @@ public class FaceRecognition {
 
         // Check if there is enough data to train
         if (labels.Length == 0 || images.Length == 0) {
-            Console.WriteLine("No previous training data found, beginning generation... \n");
+            Console.WriteLine("No previous training data found... \n");
             return; 
+        } else { 
+            isTrained = true;
         }
 
         // Train the recognizer
@@ -35,6 +38,11 @@ public class FaceRecognition {
     // ************************* PUBLIC METHODS *************************
     public void RecogniseAllFaces(Mat src, string origin = "", bool save = false)
     {
+        if (!isTrained) { 
+            Console.WriteLine("No training data found, please train the recognizer before using it");
+            return;
+        }
+
         Rect[] faces = detection.GetFaces(src);
         foreach (Rect face in faces)
         {
@@ -81,7 +89,7 @@ public class FaceRecognition {
 
 
     private void RecogniseFace(Mat src, string origin, bool save) {
-        if (src == null || src.Empty()) { 
+        if (src == null || src.Empty() || !isTrained) { 
             return; 
         }
 
@@ -109,6 +117,8 @@ public class FaceRecognition {
             string confidenceString = "Confidence " + ((int)confidence).ToString();
             string FileName = origin + predictedLabelString + confidenceString + ".jpg";
             Cv2.ImWrite(OutputPath + FileName, testImage);
+
+            Console.WriteLine("Saved recognition image to: " + OutputPath); 
         }  
     }
 }

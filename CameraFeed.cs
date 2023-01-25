@@ -90,7 +90,9 @@ class CameraFeed
             }
             if (Cv2.WaitKey(1) == 27) // esc key
             {
-                reading = false; 
+                reading = false;
+                DetectingFaces = false; 
+                RecognisingFaces = false;
                 break;
             }
 
@@ -107,7 +109,6 @@ class CameraFeed
 
         if (frameReady && _WaitDuration == 0)
         {
-            Console.WriteLine("Displaying new face detection...");
             PerformTimedActions();
 
             frameReady = false;
@@ -125,7 +126,7 @@ class CameraFeed
         if (RecognisingFaces) {
             if (RecognitionRespectsTimer)
             {
-                Console.WriteLine("New recognition...");
+                Console.WriteLine("Attempting recognition...");
                 FaceRecognition.RecogniseAllFaces(facesFrame, save:SaveRecognitions);
             }
         }   
