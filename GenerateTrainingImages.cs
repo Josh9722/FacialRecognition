@@ -4,16 +4,23 @@ class GenerateTrainingImages {
     // ************************* PRIVATE CLASS VARIABLES *************************
     private static bool generatingImages = true;
     private static string OutputPath = DataPath.TrainingRecognitionImages;
-    private CameraFeed feed; 
+    private CameraFeed cameraFeed; 
+    private DetectFace faceDetection;
     private Mat lastUsedFrame;
 
 
     // ************************* CONSTRUCTOR METHODS *************************
     public GenerateTrainingImages()
     {
-        feed = new CameraFeed();
+        cameraFeed = new CameraFeed();
+        cameraFeed.FreezeTime = 0; 
+        cameraFeed.WaitTime = 10; 
+        cameraFeed.StartCameraFeed();
 
-        lastUsedFrame = feed.facesFrame; 
+        faceDetection = new DetectFace(); 
+
+
+        lastUsedFrame = cameraFeed.facesFrame; 
         QueryUser(); 
     }
 
@@ -25,14 +32,6 @@ class GenerateTrainingImages {
         int personLabel = GetHighestLabel() + 1;
         
         while (addingFaces) {
-            // Samples Query
-            Console.WriteLine("Enter how many image samples you want taken for this person: ");
-            if (!int.TryParse(Console.ReadLine(), out int numSamples))
-            {
-                Console.WriteLine("Invalid input, defaulting to 10 samples");
-                numSamples = 10;
-            }
-
             // Decision Query
             Console.WriteLine("Press enter to start training on a new face. Please ensure you are the only face in the frame.");
             Console.WriteLine("Press spacebar to exit out of the training program");
@@ -42,23 +41,32 @@ class GenerateTrainingImages {
             {
                 addingFaces = false;
                 generatingImages = false;
-                feed.reading = false;
+                cameraFeed.reading = false;
                 return;
             }
 
-            if (key.Key == ConsoleKey.Enter) { 
+            if (key.Key == ConsoleKey.Enter) {
+                // Samples Query
+                Console.WriteLine("Enter how many image samples you want taken for this person: ");
+                if (!int.TryParse(Console.ReadLine(), out int numSamples))
+                {
+                    Console.WriteLine("Invalid input, defaulting to 10 samples");
+                    numSamples = 10;
+                }
+
+                // Start taking samples
                 if (!detectionStarted) {
                     detectionStarted = true;
-                    feed.StartFaceDetection(new DetectFace());
-                } else { 
-                    feed.RestartFaceDetection(); 
+                    cameraFeed.StartFaceDetection(faceDetection);
+                } else {
+                    cameraFeed.RestartFaceDetection(); 
                 }
 
                 Console.WriteLine("Starting training on face " + personLabel.ToString());
                 GenerationLoop(personLabel, numSamples);
                 personLabel++;
 
-                feed.PauseFaceDetection();
+                cameraFeed.PauseFaceDetection();
             }
         }
     }
@@ -67,9 +75,9 @@ class GenerateTrainingImages {
     private void GenerationLoop(int personLabel = 0, int numSamples = 10)
     {
         Mat lastUsedSample = new Mat();  
-        for (int sampleNumber = 0; sampleNumber < numSamples && feed.reading && generatingImages; sampleNumber++) { 
-            Mat currentSample = feed.facesFrame.Clone();
-            if (feed.frameReady && currentSample != lastUsedSample)
+        for (int sampleNumber = 0; sampleNumber < numSamples && cameraFeed.reading && generatingImages;) { 
+            Mat currentSample = cameraFeed.facesFrame.Clone();
+            if (cameraFeed.frameReady && currentSample != lastUsedSample)
             {
                 int numFacesFound = 0; 
                 TakeNewSample(currentSample, personLabel, out numFacesFound);
