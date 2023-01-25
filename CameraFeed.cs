@@ -6,35 +6,43 @@ using OpenCvSharp;
 
 class CameraFeed
 {
+    // ************************* PUBLIC CLASS VARIABLES *************************
+    // Configs
     public bool reading = false;
     public bool RecognitionRespectsTimer = false; // If true, recognition will only run after the timer has expired
-    private bool DetectingFaces = false; 
-    private bool RecognisingFaces = false;
-    private VideoCapture capture;
-    private Mat frame;
-
-    private DetectFace DetectFace;
-    private FaceRecognition FaceRecognition;
-
-    // Frame Timings
-    private int _FreezeDuration = 0; // How long to freeze frame after a processed frame has been used
-    private int _WaitDuration = 0; // How long to wait before attempting to use processedframe 
-    public int FreezeTime = 1000; 
-    public int WaitTime = 4000;
+    public bool SaveRecognitions = false;
+    public int FreezeTime = 1000; // How long to freeze frame after a processed frame has been used
+    public int WaitTime = 4000; // How long to wait before attempting to use a new processedframe
 
     // New Frames
-    public Mat facesFrame; 
+    public Mat facesFrame;
     public Mat processedFrame; // Used for adding a modified frame to the camera feed
     public bool frameReady = false;
 
+
+    // ************************* PRIVATE CLASS VARIABLES *************************
+    // Status Markers
+    private bool DetectingFaces = false; 
+    private bool RecognisingFaces = false;
+    
+    // Objects 
+    private VideoCapture capture;
+    private Mat frame;
+    private DetectFace DetectFace;
+    private FaceRecognition FaceRecognition;
+
+    // Timers 
+    private int _FreezeDuration = 0; 
+    private int _WaitDuration = 0;  
+    
     // Threads
     private Thread FaceDetectionThread;
     private Thread FaceRecognitionThread; 
     private static Thread CameraFeedThread; 
-    private Thread CountDown; 
-    
+    private Thread CountDown;
 
-    // ************ CONSTRUCTOR ************
+
+    // ************************* CONSTRUCTOR *************************
     public CameraFeed()
     {
         // Init Variables
@@ -43,23 +51,27 @@ class CameraFeed
         processedFrame = frame.Clone(); // Frame with circled faces
         capture = new VideoCapture(0);
 
+        // Start camera feed
+        if (CameraFeedThread == null) {
+            Console.WriteLine("Starting camera feed");
+            CameraFeedThread = new Thread(StartFeed);
+        }
+
         // Threads        
         FaceDetectionThread = new Thread(DetectFaceInBackground);
         FaceRecognitionThread = new Thread(RecogniseFaceInBackground);
         CountDown = new Thread(durationCountdown);
-        CountDown.Start();
-
-        // Start camera feed
-        if (CameraFeedThread == null) {
-            CameraFeedThread = new Thread(StartFeed);
-        }
     }
-    
 
-    // ************ PRIVATE METHODS ************
+
+    // ************************* PRIVATE METHODS *************************
     private void StartFeed()
     {
         reading = true;
+        if (!CountDown.IsAlive) {
+            CountDown.Start();
+        }
+
         // Handle errors
         if (!capture.IsOpened())
         {
@@ -88,7 +100,6 @@ class CameraFeed
 
     private void Display()
     {
-        
         if (_FreezeDuration != 0)
         {
             return;
@@ -96,7 +107,7 @@ class CameraFeed
 
         if (frameReady && _WaitDuration == 0)
         {
-            Console.WriteLine("Displaying...");
+            Console.WriteLine("Displaying new face detection...");
             PerformTimedActions();
 
             frameReady = false;
@@ -111,11 +122,13 @@ class CameraFeed
     }
 
     private void PerformTimedActions() { 
-        if (RecognitionRespectsTimer) {
-            Console.WriteLine("New recognition...");
-            FaceRecognition.RecogniseAllFaces(facesFrame, "", true);
-            Console.WriteLine("Recognition complete");
-        }
+        if (RecognisingFaces) {
+            if (RecognitionRespectsTimer)
+            {
+                Console.WriteLine("New recognition...");
+                FaceRecognition.RecogniseAllFaces(facesFrame, save:SaveRecognitions);
+            }
+        }   
     }
 
     private void DetectFaceInBackground()
@@ -147,14 +160,14 @@ class CameraFeed
                 continue; 
             }
             if (facesFrame != lastRecognition) { 
-                FaceRecognition.RecogniseAllFaces(facesFrame);
+                FaceRecognition.RecogniseAllFaces(facesFrame, save: SaveRecognitions);
                 lastRecognition = facesFrame;
             } 
         }
     }
 
 
-    // ************ PUBLIC METHODS ************
+    // ************************* PUBLIC METHODS *************************
     public void StartCameraFeed() { 
         if (CameraFeedThread.IsAlive) {
             Console.WriteLine("Already reading camera feed");
@@ -201,7 +214,7 @@ class CameraFeed
     }
 
 
-    // ************ HELPER METHODS ************
+    // ************************* HELPER METHODS *************************
     private void durationCountdown()
     {
         int decrement = 100; 

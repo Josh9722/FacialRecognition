@@ -4,14 +4,17 @@ using OpenCvSharp;
 using OpenCvSharp.Face;
 
 public class FaceRecognition { 
+    // ************************* PRIVATE CLASS VARIABLES *************************
     private EigenFaceRecognizer recognizer;
     private DetectFace detection;
     private string InputPath = DataPath.TrainingRecognitionImages;
     
+
+    // ************************* CONSTRUCTOR *************************
     public FaceRecognition() {
         // Create the recognizer
         recognizer = EigenFaceRecognizer.Create();
-        detection = new DetectFace(); 
+        detection = new DetectFace();  
 
         // Load the training data
         Mat[] images; 
@@ -22,9 +25,24 @@ public class FaceRecognition {
         recognizer.Train(images, labels);
     }
 
+
+    // ************************* PUBLIC METHODS *************************
+    public void RecogniseAllFaces(Mat src, string origin = "", bool save = false)
+    {
+        Rect[] faces = detection.GetFaces(src);
+        foreach (Rect face in faces)
+        {
+            Mat faceImage = src.SubMat(face);
+            ImageProcessing.NormaliseMat(faceImage);
+            RecogniseFace(faceImage, origin, save);
+        }
+    }
+
+
+    // ************************* PRIVATE METHODS *************************
+    // Returns images sorted by label 
     private void LoadTrainingData(out Mat[] images, out int[] labels) {
         int NumberOfFiles = Directory.GetFiles(InputPath, "*.jpg", SearchOption.AllDirectories).Length;
-        Console.WriteLine(NumberOfFiles + " ---");
         images = new Mat[NumberOfFiles];
         labels = new int[NumberOfFiles];
 
@@ -33,30 +51,28 @@ public class FaceRecognition {
         foreach (string folder in Directory.EnumerateDirectories(InputPath)) {
             Console.WriteLine("Loading training data from " + Path.GetFileName(folder));
             Console.WriteLine("Label number: " + labelNumber.ToString());
-            string[] filePaths = Directory.GetFiles(folder);
-            for (int i = 0; i < filePaths.Length; i++) {
-                Console.WriteLine("Loading File: " + Path.GetFileName(filePaths[i]) ); 
 
+            Console.WriteLine("Loading File: ");
+            string[] filePaths = Directory.GetFiles(folder); 
+            for (int i = 0; i < filePaths.Length; i++) {
+                Console.Write(Path.GetFileName(filePaths[i]) + " "); 
+
+                // Retrieve image 
                 Mat image = new Mat(filePaths[i], ImreadModes.Color);
                 image = ImageProcessing.NormaliseMat(image);
-                images[index] = image;
                 
+                // Add image and label
+                images[index] = image;                
                 labels[index] = labelNumber;
                 
                 index++; 
             }
+            Console.WriteLine();
+
             labelNumber++; 
         }
     }
 
-    public void RecogniseAllFaces(Mat src, string origin = "", bool save = false) {
-        Rect[] faces = detection.GetFaces(src);
-        foreach (Rect face in faces) {
-            Mat faceImage = src.SubMat(face);
-            ImageProcessing.NormaliseMat(faceImage);
-            RecogniseFace(faceImage, origin, save);
-        }
-    }
 
     private void RecogniseFace(Mat src, string origin, bool save) {
         if (src == null || src.Empty()) { 
@@ -83,7 +99,7 @@ public class FaceRecognition {
                 origin = "From " + origin + "  ";
             }
             string OutputPath = DataPath.ImagesOutput;
-            string predictedLabelString = "Predicted " + predictedLabel.ToString();
+            string predictedLabelString = "Predicted Label " + predictedLabel.ToString() + " ";
             string confidenceString = "Confidence " + ((int)confidence).ToString();
             string FileName = origin + predictedLabelString + confidenceString + ".jpg";
             Cv2.ImWrite(OutputPath + FileName, testImage);
