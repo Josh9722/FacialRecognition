@@ -8,12 +8,8 @@ public static class Utilities
 
 
     // ************ PUBLIC METHODS ************
-    public static void SaveAllFaces(Mat src, string path = "") { 
-        int numFaces = 0;
-        SaveAllFaces(src, out numFaces, path);
-    }
-    
-    public static void SaveAllFaces(Mat src, out int numFaces, string path = "") // Save all faces in a mat to jpgs at path
+    // Saves all faces to path, returns number of faces saved
+    public static void SaveAllFaces(Mat src, out int numFaces, string path = "") 
     {
         numFaces = 0;
         if (src == null || src.Empty())

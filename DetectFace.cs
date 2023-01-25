@@ -12,29 +12,18 @@ This is accomplished through the approach of cascade classifiers (Haar and Lbp)
 
 class DetectFace {
 
-    public CascadeClassifier[] GetAllCascades()
-    {
-        string[] cascadePaths = DataPath.AllCascades();
-        CascadeClassifier[] allCascades = new CascadeClassifier[cascadePaths.Length];
-        for(int i = 0; i < cascadePaths.Length; i++) {
-            allCascades[i] = new CascadeClassifier(cascadePaths[i]);
-        }
-        return allCascades; 
-    }
 
-    // Returns a list of faces in an image
+    // ************************* PUBLIC METHODS *************************
+    // Returns a list of found faces as coordinates in an image
     public Rect[] GetFaces(Mat src, params CascadeClassifier[] ListOfCascades)
     { 
-        if (ListOfCascades.Length == 0) {
+        // If no specific cascades are specified to use, use all. 
+        if (ListOfCascades == null || ListOfCascades.Length == 0) {
             ListOfCascades = GetAllCascades();
         } 
 
+        // Add coordinates of all found faces to list list
         List<Rect> faces = new List<Rect>();
-        
-        
-        using Mat gray = new Mat();
-
-        // Using multiple cascades to increase accuracy
         foreach (CascadeClassifier cascade in ListOfCascades)
         {
             int[] rejectLevels;
@@ -42,7 +31,7 @@ class DetectFace {
             Rect[] detectedFaces =  cascade.DetectMultiScale(src, out rejectLevels, out levelWeights, 1.08, 2, HaarDetectionTypes.ScaleImage, outputRejectLevels: true);
 
             foreach (Rect detectedFace in detectedFaces) {
-                // Reject faces with low confidence
+                // Don't add faces when unconfident with the detection
                 double l = levelWeights[Array.IndexOf(detectedFaces, detectedFace)]; 
                 float r = rejectLevels[Array.IndexOf(detectedFaces, detectedFace)];
                 if (l <= 5) { 
@@ -58,7 +47,6 @@ class DetectFace {
 
         return faces.ToArray();
     }
-
 
     // Draws a circle around the all found faces
     public Mat FindFace(Mat src, params CascadeClassifier[] cascade)
@@ -95,5 +83,11 @@ class DetectFace {
         }
 
         return result;
+    }
+
+    // ************************* PRIVATE METHODS *************************
+    private CascadeClassifier[] GetAllCascades()
+    {
+        return Array.ConvertAll(DataPath.AllCascades(), path => new CascadeClassifier(path));
     }
 }
