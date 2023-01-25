@@ -21,6 +21,12 @@ public class FaceRecognition {
         int[] labels;
         LoadTrainingData(out images, out labels);
 
+        // Check if there is enough data to train
+        if (labels.Length == 0 || images.Length == 0) {
+            Console.WriteLine("No previous training data found, beginning generation... \n");
+            return; 
+        }
+
         // Train the recognizer
         recognizer.Train(images, labels);
     }
@@ -49,8 +55,8 @@ public class FaceRecognition {
         int labelNumber = 0; 
         int index = 0; 
         foreach (string folder in Directory.EnumerateDirectories(InputPath)) {
-            Console.WriteLine("Loading training data from " + Path.GetFileName(folder));
-            Console.WriteLine("Label number: " + labelNumber.ToString());
+            Console.WriteLine("Loading training data from Folder: " + Path.GetFileName(folder));
+            Console.WriteLine("Assigning label number: " + labelNumber.ToString());
 
             Console.WriteLine("Loading File: ");
             string[] filePaths = Directory.GetFiles(folder); 
